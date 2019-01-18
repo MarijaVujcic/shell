@@ -17,8 +17,10 @@ char *builtin_str[] = {
   "help",
   "exit",
   "path",
-  "lst"
-	
+  "lst",
+  "echo",
+  "clr"
+
 };
 
 int (*builtin_func[]) (char **) = {
@@ -26,7 +28,9 @@ int (*builtin_func[]) (char **) = {
   &lsh_help,
   &lsh_exit,
   &path,
-  &lst
+  &lst,
+  &echo,
+  &clr
 };
 
 
@@ -53,14 +57,19 @@ int lsh_help(char **args)
   for (i = 0; i < lsh_num_builtins(); i++) {
     printf("  %s\n", builtin_str[i]);
   }
-
-  printf("Use the man command for information on other programs.\n");
-  return 1;
-}
 int lsh_exit(char **args)
 {
-	printf("\n\nRegards ,until next time ! :)\n\n");
+        printf("\n\nRegards ,until next time ! :)\n\n");
   return 0;
+}
+int echo(char** args) {
+  int i = 1;
+  while(args[i] != NULL) {
+    printf("%s ", args[i]);
+    i++;
+  }
+  printf("\n");
+  return 1;
 }
 
 int lsh_launch(char **args)
@@ -105,59 +114,54 @@ int lsh_execute(char **args)
 
   return lsh_launch(args);
 }
-int path( char **args) 
-{ 
-    char cwd[1024]; 
-    getcwd(cwd, sizeof(cwd)); 
-    printf("\n\nCurrent directory is: %s\n", cwd);
-return 1; 
-} 
+int path( char **args)
+{
+    char cwd[1024];
+    getcwd(cwd, sizeof(cwd));
+    printf("\n %s\n", cwd);
+return 1;
+}
 int lst(char **args)
 {
-	DIR *dir;
-	struct dirent *d;
-	if(args[1]==NULL)
-	{
-		dir=opendir(".");
-	}
-	else
-	{	
-		dir=opendir(args[1]);
-		/*char *ch;int i=1;
-		while(args[i]!=NULL)
-		{
-			strcat(ch,args[i]);
-			strcat(ch," ");
-			i=i+1;
-		}
-		dir=opendir(ch);*/
-	}
-	if(dir==NULL)
-	{
-	 printf("EROOR ACCURED, COUDNT OPEN DIR\n");
-	
+        DIR *dir;
+        struct dirent *d;
+        if(args[1]==NULL)
+        {
+                dir=opendir(".");
+        }
+        else
+        {
 
-	}
-	else
-	{
-	 while((d=readdir(dir))!=NULL)
-		{
-		printf("---> %s\n",d->d_name);
-		}
-	}
-	closedir(dir);
-return 1;
-	
+               
+               if( (dir=opendir(args[1]))== NULL)
+			   {
+				   printf("Direktorij ne postoji %s !",args[1]);
+				   return 1;
+			   }
+        }
+       
+         while((d=readdir(dir))!=NULL)
+                {
+                printf("---> %s\n",d->d_name);
+                }
+        
+        closedir(dir);
+        return 1;
+
 }
-void init_shell() 
-{ 
-    printf("\n\t****Greetings, welcome to MV shell ****"); 
-    char* username = getenv("USER"); 
-    printf("\n\n\nUSER : @%s", username); 
-    printf("\n"); 
-   
-     
-} 
+int clr(char **args)
+{
+		system("clear");
+}	
+void init_shell()
+{
+    printf("\n\t****Greetings, welcome to MV shell ****");
+    char* username = getenv("USER");
+    printf("\n\n\nUSER : @%s", username);
+    printf("\n");
+
+
+}
 
 #define LSH_RL_BUFSIZE 1024
 char *lsh_read_line(void)
@@ -166,7 +170,6 @@ char *lsh_read_line(void)
   int position = 0;
   char *buffer = malloc(sizeof(char) * bufsize);
   int c;
-
   if (!buffer) {
     fprintf(stderr, "lsh: allocation error\n");
     exit(EXIT_FAILURE);
@@ -224,8 +227,8 @@ char **lsh_split_line(char *line)
       bufsize += LSH_TOK_BUFSIZE;
       tokens_backup = tokens;
       tokens = realloc(tokens, bufsize * sizeof(char*));
-      if (!tokens) {
-		free(tokens_backup);
+     if (!tokens) {
+                free(tokens_backup);
         fprintf(stderr, "lsh: allocation error\n");
         exit(EXIT_FAILURE);
       }
@@ -236,14 +239,20 @@ char **lsh_split_line(char *line)
   tokens[position] = NULL;
   return tokens;
 }
+
+
 void lsh_loop(void)
 {
   char *line;
   char **args;
   int status;
+  char cwd[100];
+  getcwd(cwd,sizeof(cwd));
+  char *username =getenv("USER");
 
   do {
-    printf("> ");
+    getcwd(cwd,sizeof(cwd));
+    printf("%s shellu-@%s >>",cwd ,username);
     line = lsh_read_line();
     args = lsh_split_line(line);
     status = lsh_execute(args);
@@ -253,21 +262,13 @@ void lsh_loop(void)
   } while (status);
 }
 
-/**
-   @brief Main entry point.
-   @param argc Argument count.
-   @param argv Argument vector.
-   @return status code
- */
+
 int main(int argc, char **argv)
 {
-  // Load config files, if any.
-
-  // Run command loop.
+  clr();
   init_shell();
   lsh_loop();
 
-  // Perform any shutdown/cleanup.
-
   return EXIT_SUCCESS;
 }
+
