@@ -1,5 +1,6 @@
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -13,6 +14,7 @@ int lsh_echo(char **args);
 int lst(char **args);
 int echo(char **args);
 int clr(char **args);
+int touch(char **args);
 
 char *builtin_str[] = {
   "cd",
@@ -21,7 +23,8 @@ char *builtin_str[] = {
   "path",
   "lst",
   "echo",
-  "clr"
+  "clr",
+  "touch"
 
 };
 
@@ -32,7 +35,8 @@ int (*builtin_func[]) (char **) = {
   &path,
   &lst,
   &echo,
-  &clr
+  &clr,
+  &touch
 };
 
 
@@ -62,6 +66,20 @@ int lsh_help(char **args)
   {
     printf("  %s\n", builtin_str[i]);
   }
+}
+int touch(char **args)
+{
+	if (args[1] == NULL)
+        {
+		fprintf(stderr, "lsh_touch: expected argument to \"touch\"\n");
+	}
+	else {
+		if (creat(args[1], 0755) != 0) {
+			perror("lsh");
+		}
+	}
+	return 1;
+	
 }
 int lsh_exit(char **args)
 {
@@ -139,6 +157,7 @@ int path( char **args)
     printf("\n %s\n", cwd);
 return 1;
 }
+//function for listing current dir or  dir with given name
 int lst(char **args)
 {
         DIR *dir;
@@ -167,11 +186,15 @@ int lst(char **args)
         return 1;
 
 }
+
+//function for clearing window
 int clr(char **args)
 {
 		system("clear");
 		return 1;
 }	
+
+
 void init_shell()
 {
     printf("\n\t****Greetings, welcome to MV shell ****");
@@ -182,6 +205,8 @@ void init_shell()
 
 }
 
+
+//reading the line ,checking is it 
 #define LSH_RL_BUFSIZE 1024
 char *lsh_read_line(void)
 {
@@ -197,9 +222,7 @@ char *lsh_read_line(void)
 
   while (1)
   {
-    // Read a character
     c = getchar();
-
     if (c == EOF)
     {
       exit(EXIT_SUCCESS);
@@ -230,11 +253,8 @@ char *lsh_read_line(void)
 }
 #define LSH_TOK_BUFSIZE 64
 #define LSH_TOK_DELIM " \t\r\n\a"
-/**
-   @brief Split a line into tokens (very naively).
-   @param line The line.
-   @return Null-terminated array of tokens.
- */
+
+//splitting line in tokens
 char **lsh_split_line(char *line)
 {
   int bufsize = LSH_TOK_BUFSIZE, position = 0;
@@ -248,6 +268,7 @@ char **lsh_split_line(char *line)
   }
 
   token = strtok(line, LSH_TOK_DELIM);
+  printf("%s",token);
   while (token != NULL)
  {
     tokens[position] = token;
@@ -273,6 +294,7 @@ char **lsh_split_line(char *line)
 }
 
 
+//loop for printng command line , calling lsh_read_line for reading, split for splitting and execute to do command
 void lsh_loop(void)
 {
   char *line;
@@ -295,7 +317,7 @@ void lsh_loop(void)
   } while (status);
 }
 
-
+//main function clearing screen, calling initalization of shell
 int main(int argc, char **argv)
 {
   system("clear");
