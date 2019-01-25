@@ -1,5 +1,6 @@
 #include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -15,7 +16,7 @@ int lst(char **args);
 int echo(char **args);
 int clr(char **args);
 int touch(char **args);
-
+int mkdr(char **args);
 char *builtin_str[] = {
   "cd",
   "help",
@@ -24,7 +25,8 @@ char *builtin_str[] = {
   "lst",
   "echo",
   "clr",
-  "touch"
+  "touch",
+  "mkdr"
 
 };
 
@@ -36,7 +38,8 @@ int (*builtin_func[]) (char **) = {
   &lst,
   &echo,
   &clr,
-  &touch
+  &touch,
+  &mkdr
 };
 
 
@@ -56,10 +59,11 @@ int lsh_cd(char **args)
   }
   return 1;
 }
+
 int lsh_help(char **args)
 {
   int i;
-  printf("MArija VUjcic's LSH\n");
+  printf("Marija Vujcic's LSH\n");
   printf("Type program names and arguments, and hit enter.\n");
   printf("The following are built in:\n");
   for (i = 0; i < lsh_num_builtins(); i++)
@@ -67,11 +71,31 @@ int lsh_help(char **args)
     printf("  %s\n", builtin_str[i]);
   }
 }
+
+int mkdr(char **args)
+{
+	if(args[1]==NULL)
+	{
+		fprintf(stderr,"No arguments to execute.");
+		
+	
+	}
+	else
+        {
+	 	if(mkdir(args[1],0755)!=0)
+		{
+			perror("lsh");
+		}
+		printf(" Directory named %s is made.\n",args[1]);
+        }
+	return 1;
+
+}
 int touch(char **args)
 {
 	if (args[1] == NULL)
         {
-		fprintf(stderr, "lsh_touch: expected argument to \"touch\"\n");
+		fprintf(stderr, "No arguments to execute.\n");
 	}
 	else {
 		if (creat(args[1], 0755) != 0) {
@@ -81,11 +105,13 @@ int touch(char **args)
 	return 1;
 	
 }
+
 int lsh_exit(char **args)
 {
-        printf("\n\nRegards ,until next time ! :)\n\n");
-  return 0;
+        printf("\n\nRegards, until next time ! :)\n\n");
+        return 0;
 }
+
 int echo(char** args) 
 {
   int i = 1;
@@ -106,7 +132,6 @@ int lsh_launch(char **args)
   pid = fork();
   if (pid == 0) 
   {
-    // Child process
     if (execvp(args[0], args) == -1)
     {
       perror("lsh");
@@ -115,12 +140,11 @@ int lsh_launch(char **args)
   }
   else if (pid < 0) 
   {
-    // Error forking
     perror("lsh");
   }
   else
   {
-    // Parent process
+    
     do
     {
       waitpid(pid, &status, WUNTRACED);
@@ -130,13 +154,13 @@ int lsh_launch(char **args)
   return 1;
 }
 
+
 int lsh_execute(char **args)
 {
   int i;
 
   if (args[0] == NULL)
  {
-    // An empty command was entered.
     return 1;
   }
 
@@ -150,14 +174,16 @@ int lsh_execute(char **args)
 
   return lsh_launch(args);
 }
+
 int path( char **args)
 {
     char cwd[1024];
     getcwd(cwd, sizeof(cwd));
     printf("\n %s\n", cwd);
-return 1;
+    return 1;
 }
-//function for listing current dir or  dir with given name
+
+
 int lst(char **args)
 {
         DIR *dir;
@@ -187,7 +213,7 @@ int lst(char **args)
 
 }
 
-//function for clearing window
+
 int clr(char **args)
 {
 		system("clear");
@@ -206,7 +232,7 @@ void init_shell()
 }
 
 
-//reading the line ,checking is it 
+ 
 #define LSH_RL_BUFSIZE 1024
 char *lsh_read_line(void)
 {
@@ -238,7 +264,7 @@ char *lsh_read_line(void)
     }
     position++;
 
-    // If we have exceeded the buffer, reallocate.
+    
     if (position >= bufsize)
     {
       bufsize += LSH_RL_BUFSIZE;
@@ -254,7 +280,7 @@ char *lsh_read_line(void)
 #define LSH_TOK_BUFSIZE 64
 #define LSH_TOK_DELIM " \t\r\n\a"
 
-//splitting line in tokens
+
 char **lsh_split_line(char *line)
 {
   int bufsize = LSH_TOK_BUFSIZE, position = 0;
@@ -268,7 +294,7 @@ char **lsh_split_line(char *line)
   }
 
   token = strtok(line, LSH_TOK_DELIM);
-  printf("%s",token);
+  
   while (token != NULL)
  {
     tokens[position] = token;
@@ -294,7 +320,7 @@ char **lsh_split_line(char *line)
 }
 
 
-//loop for printng command line , calling lsh_read_line for reading, split for splitting and execute to do command
+
 void lsh_loop(void)
 {
   char *line;
@@ -317,7 +343,7 @@ void lsh_loop(void)
   } while (status);
 }
 
-//main function clearing screen, calling initalization of shell
+
 int main(int argc, char **argv)
 {
   system("clear");
